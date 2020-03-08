@@ -5,17 +5,23 @@ import numpy as np
 from tqdm import tqdm
 import pickle
 import os
+from root_numpy import root2array
 
-def get_dataset(tree_data, test_split=0.2):
+def get_dataset(data_file, test_split=0.2):
     """
-    @tree_data: list of all the trees. label is same as the index in the data array
+    @data_file: path of the root file
     @test_split: fraction of data to be used as test set
     """
     assert 0 <= test_split <= 0.3
 
-    data_cache = 'dataset_cache.pkl'
-    if os.path.exists(data_cache):
-        return pickle.load(open(data_cache, 'rb'))
+    # Load data
+    signal = root2array(data_file, 'sig_tree')
+    background = root2array(data_file, 'bkg_tree')
+
+    tree_data = [
+        np.array([img[0] for img in signal]),
+        np.array([img[0] for img in background])
+    ]
 
     X_train = []
     Y_train = []
@@ -25,9 +31,7 @@ def get_dataset(tree_data, test_split=0.2):
     # Deterministic Random
     np.random.seed(0)
 
-    for label, tree in enumerate(tree_data):
-        print ('Loading tree #%d...' % label)
-        data = np.array([np.array(entry.vars) for entry in tqdm(tree)])
+    for label, data in enumerate(tree_data):
         np.random.shuffle(data)
 
         test_size = int(len(data) * test_split)
@@ -53,7 +57,4 @@ def get_dataset(tree_data, test_split=0.2):
     X_test = X_test[test_perm]
     Y_test = Y_test[test_perm]
     
-    pickle.dump(((X_train, Y_train), (X_test, Y_test)),
-                open(data_cache, 'wb'),
-                protocol=pickle.HIGHEST_PROTOCOL)
     return (X_train, Y_train), (X_test, Y_test)
