@@ -24,8 +24,8 @@ if not isfile('sample_images_32x32.root'):
 print ("Loaded data")
 
 # Training configs
-num_epochs = 60
-lr = 0.0001
+num_epochs = 20
+lr = 0.0003
 batch_size = 64
 
 trainer = Trainer(imgsize=32, num_classes=2)

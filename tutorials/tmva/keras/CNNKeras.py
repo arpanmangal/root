@@ -60,10 +60,11 @@ dataloader.PrepareTrainingAndTestTree( TCut(''),
                                   "nTrain_Signal=8000:nTrain_Background=8000:SplitMode=Random:"
                                    "NormMode=NumEvents:!V" )
 
+################ KERAS MODEL ###############################
 # Generate model
 batch_size = 64
 num_classes = 2
-epochs = 12
+epochs = 15
 
 # Define model
 model = Sequential()
@@ -90,6 +91,37 @@ factory.BookMethod(dataloader, TMVA.Types.kPyKeras, 'PyKeras',
                    'H:!V:VarTransform=None:FilenameModel=model_cnn.h5:'
                    'FileNameTrainedModel=trained_model_cnn.h5:NumEpochs={}:BatchSize={}'.format(epochs, batch_size))
 
+############### TMVA model #######################3#input layout 
+inputLayoutString = "InputLayout=1|32|32"
+                                                                                                
+## Batch Layout                                                                                                                                     
+batchLayoutString = "BatchLayout=64|1|1024"
+                                                   
+layoutString = ("Layout=CONV|8|3|3|1|1|1|1|RELU,BNORM,CONV|8|3|3|1|1|1|1|RELU,"
+                "BNORM,RESHAPE|FLAT,DENSE|64|TANH,DENSE|1|TANH")
+
+##Training strategies.                                                                                                                          
+training1 = ("LearningRate=1e-4,Momentum=0.9,Repetitions=1,"
+                     "ConvergenceSteps=10,BatchSize=64,TestRepetitions=1,"
+                     "MaxEpochs=20,WeightDecay=1e-4,Regularization=None,"
+                     "Optimizer=SGD,DropConfig=0.0+0.0+0.0+0.0")
+ 
+trainingStrategyString = "TrainingStrategy=" + training1
+    
+## General Options.                                                                                                                              
+cnnOptions = ("!H:V:ErrorStrategy=CROSSENTROPY:VarTransform=None:"
+                       "WeightInitialization=XAVIERUNIFORM")
+
+cnnOptions +=  ":" + inputLayoutString
+cnnOptions +=  ":" + batchLayoutString
+cnnOptions +=  ":" + layoutString
+cnnOptions +=  ":" + trainingStrategyString
+cnnOptions +=  ":Architecture=CPU"
+
+##book CNN
+factory.BookMethod(dataloader, TMVA.Types.kDL, "DL_CNN", cnnOptions)
+
+
 # Run training, test and evaluation
 factory.TrainAllMethods()
 factory.TestAllMethods()
@@ -98,3 +130,5 @@ factory.EvaluateAllMethods()
 # Print ROC
 canvas = factory.GetROCCurve(dataloader)
 canvas.Draw()
+
+time.sleep(300)
